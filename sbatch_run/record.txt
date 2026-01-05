@@ -1,0 +1,82 @@
+experiment exp8
+exchange + depth
+
+experiment exp9
+加了路径loss
+
+exp10
+四个表面的梯度loss
+
+exp11
+换成initial 作为输入
+
+exp12
+(1)表面之间插值采样
+低信号层mean loss 低； 高信号层 mean value 高
+高低信号层之间的mean的差距 也应该越大越好 可以加个loss
+
+(2) 梯度loss 
+应该是沿着white-pial方向的梯度进行loss计算，而不是直接图像的loss
+
+
+(3) 顺序惩罚
+hinge loss
+loss = max(0, depth_outer - depth_pial + margin)
+
+191 test subjects
+tag: exp12
+======== hypo inner ========
+assd mean: 0.3244250938296318
+assd std: 0.0
+hd mean: 0.8653136491775513
+hd std: 0.0
+sif mean: 0.0
+sif std: 0.0
+======== hypo outer ========
+assd mean: 0.3247058093547821
+assd std: 0.0
+hd mean: 0.8441513180732727
+hd std: 0.0
+sif mean: 0.0
+sif std: 0.0
+
+experiment_3
+exp1 
+去掉输入加depth
+exp2
+换了大的K 
+exp3
+查看四个小的loss 
+exp4
+尝试不交换 就再一次形变到相应的inner outer
+exp5
+T 改成多步积分
+exp6
+加了一个GNN
+exp7
+加了一个attention模块
+exp8
+把GNN关掉 只加attention模块
+
+experiment_4
+exp1 
+MLP模块 全部数据集训练
+
+experiment_5
+exp1
+最终的结构和loss
+剩下的跑跑对比实验吧
+
+
+==================================================
+experiment_1
+exp1
+加了thickness 但没有交换的
+
+exp2
+只有原本的BI
+去掉thickness 没有交换的
+
+
+
+

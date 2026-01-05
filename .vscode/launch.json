@@ -1,0 +1,65 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug BiCortexODE - surf training",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/train.py",
+        "console": "integratedTerminal",
+        "env": {
+          "PYTHONPATH": "${workspaceFolder}",
+          "CUDA_VISIBLE_DEVICES": "0"
+        },
+        "args": [
+          "--train_type", "surf",
+          "--data_dir", "/public_bme2/bme-dgshen/caoshui2024/JM-pipeline-original/Step04_sMRI_Signal_Surfaces",  // ← 替换为真实 data_path
+          "--model_dir", "/home_data/home/caoshui2024/DeepLearning_BrainMLSR/CortexODE-Bi/ckpts/experiment_1/",  // 或用变量: $model_save_path
+          "--datasplit_csv", "/home_data/home/caoshui2024/DeepLearning_BrainMLSR/CortexODE-Bi/data/subject_split_original.csv",  // ← 替换
+          // "--pretrained_path", "/home_data/home/caoshui2024/DeepLearning_BrainMLSR/CortexODE/ckpts/experiment_3/model_outer_5T_lh_exp1_500epochs.pt",  // 可选
+          "--data_name", "5T",
+          "--surf_hemi", "lh",
+          "--surf_type", "outer",
+          "--n_epochs", "500",
+          "--tag", "exp1",
+          "--solver", "euler",
+          "--step_size", "0.1",
+          "--device", "gpu"
+        ],
+        "cwd": "${workspaceFolder}",
+        "justMyCode": true
+      }
+    ]
+  }
+
+// {
+//   "version": "0.2.0",
+//   "configurations": [
+//     {
+//       "name": "Debug BiCortexODE - eval (5T lh)",
+//       "type": "python",
+//       "request": "launch",
+//       "program": "${workspaceFolder}/eval.py",
+//       "console": "integratedTerminal",
+//       "env": {
+//         "PYTHONPATH": "${workspaceFolder}",
+//         "CUDA_VISIBLE_DEVICES": "0"
+//       },
+//       "args": [
+//         "--test_type", "eval",
+//         "--data_dir", "/public_bme2/bme-dgshen/caoshui2024/JM-pipeline-original/Step04_sMRI_Signal_Surfaces",
+//         "--model_dir", "/home_data/home/caoshui2024/DeepLearning_BrainMLSR/CortexODE-Bi/ckpts/experiment_1/",
+//         "--datasplit_csv", "/home_data/home/caoshui2024/DeepLearning_BrainMLSR/CortexODE-Bi/data/subject_split_original.csv",
+//         "--result_dir", "/home_data/home/caoshui2024/DeepLearning_BrainMLSR/CortexODE-Bi/ckpts/experiment_1/result",
+//         "--data_name", "5T",
+//         "--surf_hemi", "lh",
+//         "--tag", "exp2",
+//         "--solver", "euler",
+//         "--step_size", "0.1",
+//         "--device", "gpu"
+//       ],
+//       "cwd": "${workspaceFolder}",
+//       "justMyCode": true
+//     }
+//   ]
+// }

@@ -1,0 +1,36 @@
+#!/bin/bash
+#SBATCH -J _train # 作业名
+#SBATCH -o _train_%j.o   # 标准输出文件名，包括作业ID
+#SBATCH -e _train_%j.e   # 标准错误文件名，包括作业ID
+#SBATCH -n 1                       # 指定core数量（例如8个）
+#SBATCH -p  bme_gpu                  # 指定分区bme_a10080g
+#SBATCH -N 1                       # 指定node数量（保持为1，如果任务可以在单个节点上完成）
+#SBATCH --time=120:00:00             # 最大wallclock时间
+#SBATCH --gres=gpu:1    
+
+# 加载必要的模块
+module load tools/conda/anaconda.2023.09
+
+# 激活Conda环境
+source activate mri
+
+# 设置工作目录
+WORKDIR=/home_data/home/caoshui2024/DeepLearning_BrainMLSR/CortexODE/sbatch_run
+cd $WORKDIR || exit
+
+
+code_path="/home_data/home/caoshui2024/DeepLearning_BrainMLSR/CortexODE-Bi"
+data_path="/public_bme2/bme-dgshen/caoshui2024/JM-pipeline-original/Step04_sMRI_Signal_Surfaces"
+model_save_path="/home_data/home/caoshui2024/DeepLearning_BrainMLSR/BiCortexODE/ckpts/experiment_1"
+datasplit_csv_path="/home_data/home/caoshui2024/DeepLearning_BrainMLSR/CortexODE-Bi/data/subject_split_original.csv"
+# pretrained_path="/home_data/home/caoshui2024/DeepLearning_BrainMLSR/CortexODE/ckpts/experiment_3/model_outer_5T_lh_exp1_500epochs.pt"
+
+mkdir -p "$model_save_path"
+
+python $code_path/train.py --train_type='surf' --data_dir=$data_path --model_dir=$model_save_path \
+    --datasplit_csv=$datasplit_csv_path   \
+    --data_name='5T'  --surf_hemi='rh' --surf_type='both' --n_epochs=500 --tag='exp1' --solver='euler' --step_size=0.1 --device='gpu' \
+
+ 
+
+    
