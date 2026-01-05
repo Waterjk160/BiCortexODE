@@ -1,0 +1,5 @@
+双向形变ODE
+
+train,eval参考cortexODE的github
+
+具体申请脚本在sbatch_run
