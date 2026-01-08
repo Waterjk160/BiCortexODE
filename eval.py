@@ -378,8 +378,8 @@ if __name__ == '__main__':
             # sif_gm_all.append(check_self_intersect(v_gm_pred, f_gm_pred, collisions=20))
 
             # sif_wm_all.append(0)
-            # sif_inner_all.append(0)
-            # sif_outer_all.append(0)
+            sif_inner_all.append(check_self_intersect(v_out_inner_pred, faces, collisions=20))
+            sif_outer_all.append(check_self_intersect(v_out_outer_pred, faces, collisions=20))
          
         # break
 

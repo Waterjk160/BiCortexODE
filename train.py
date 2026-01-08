@@ -413,13 +413,11 @@ def train_surf(config):
     # --------------------------
     logging.info("initalize model ...")
     cortexode = BiCortexODE(dim_in=3, dim_h=C, kernel_size=K, n_scale=Q).to(device)
-    # 使用Stage-2开启这个
     # cortexode_exchange = BiCortexODE(dim_in=3, dim_h=C, kernel_size=K, n_scale=Q).to(device)
-
+    # ★ 使用 ODE wrapper
+    # ode_func = ODEfunc(cortexode)
     optimizer = optim.Adam(cortexode.parameters(), lr=lr)
-    # 使用Stage-2开启这个
     # optimizer = optim.Adam(list(cortexode.parameters()) + list(cortexode_exchange.parameters()), lr=lr)
-
     # <<< 添加学习率调度器 >>>
     from torch.optim.lr_scheduler import ReduceLROnPlateau
     scheduler = ReduceLROnPlateau(
@@ -521,7 +519,6 @@ def train_surf(config):
                 )
                 v_out_inner_to_outer = full_solution_exchange[0][-1]
                 v_out_outer_to_inner = full_solution_exchange[1][-1]
-                # ================================ 交换相关权重 可以调参================================
                 exchange_loss_weight = 1
             else:
                 # 占位符，避免变量未定义
@@ -538,6 +535,21 @@ def train_surf(config):
                 nn.MSELoss()(v_out_inner_to_outer, v_gt_outer) * exchange_loss_weight +
                 nn.MSELoss()(v_out_outer_to_inner, v_gt_inner) * exchange_loss_weight
             )
+            # ----------------------------
+            # 2. Laminar Depth Consistency Loss (预测 vs GT 层厚)
+            # ----------------------------
+
+            # 计算预测的 inner-outer 距离（逐点欧氏距离）
+            pred_thickness = torch.norm(v_out_outer - v_out_inner, dim=-1)   # [B, N]
+
+            # 计算 GT 的 inner-outer 距离
+            gt_thickness = torch.norm(v_gt_outer - v_gt_inner, dim=-1)       # [B, N]
+
+            # 使用 L1 loss（更鲁棒）或 L2 loss（smooth）
+            thickness_loss = torch.mean(torch.abs(pred_thickness - gt_thickness))  # L1
+            # 或者：
+            # thickness_loss = torch.mean((pred_thickness - gt_thickness) ** 2)    # L2
+
             # ----------------------------
             # 2. Depth Consistency Loss (深度先验)
             # ----------------------------
@@ -647,7 +659,6 @@ def train_surf(config):
             # # ----------------------------
             # Total Loss
             # ----------------------------
-            # ================================  可以调参的地方 ================================
             loss_mse_weight = 1e3
             loss_depth_weight = 0.01 * 0 # 取消 depth  模块 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             loss_Trajectory_weight = 100 * 0 # 取消 交换路径  模块 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -655,11 +666,12 @@ def train_surf(config):
             loss_edge_weight = 0.01 * 0 # 取消 edge  模块 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             loss_order_weight = 100 
             loss_Laplacian_smooth_weight = 1 
+            loss_thickness_weight = 1
 
 
             loss = loss_mse_weight * loss_mse + loss_depth_weight * loss_depth + loss_Trajectory_weight * loss_Trajectory_consistency + \
                     loss_band_weight * loss_band + loss_edge_weight * loss_edge_gradent + loss_order_weight * loss_order + \
-                    loss_Laplacian_smooth_weight * loss_Laplacian_smooth
+                    loss_Laplacian_smooth_weight * loss_Laplacian_smooth + loss_thickness_weight * thickness_loss
             
             # ✅ 分别记录各项 loss（用于 epoch 平均）
             avg_loss.append(loss.item())
@@ -670,13 +682,14 @@ def train_surf(config):
             avg_edge_loss.append(loss_edge_weight * loss_edge_gradent.item())
             avg_order_loss.append(loss_order_weight * loss_order.item())
             avg_Laplacian_smooth_loss.append(loss_Laplacian_smooth_weight * loss_Laplacian_smooth.item())
+            avg_thickness_loss.append(loss_thickness_weight * thickness_loss.item())
 
             loss.backward()
             optimizer.step()
 
         # logging.info('epoch:{}, loss:{}'.format(epoch, np.mean(avg_loss)))
 
-        logging.info('epoch:{}, total_loss:{:.6f}, mse_loss:{:.6f}, depth_loss:{:.6f}, traj_loss:{:.6f}, band_loss:{:.6f}, edge_loss:{:.6f}, order_loss:{:.6f}, laplacian_smooth_loss:{:.6f}'.format(
+        logging.info('epoch:{}, total_loss:{:.6f}, mse_loss:{:.6f}, depth_loss:{:.6f}, traj_loss:{:.6f}, band_loss:{:.6f}, edge_loss:{:.6f}, order_loss:{:.6f}, laplacian_smooth_loss:{:.6f}, middle_thickness:{:.6f}'.format(
             epoch,
             np.mean(avg_loss),
             np.mean(avg_mse_loss),
@@ -685,7 +698,8 @@ def train_surf(config):
             np.mean(avg_band_loss),
             np.mean(avg_edge_loss),
             np.mean(avg_order_loss),
-            np.mean(avg_Laplacian_smooth_loss)
+            np.mean(avg_Laplacian_smooth_loss),
+            np.mean(avg_thickness_loss)
         ))
 
         if epoch % 20 == 0:
@@ -736,14 +750,12 @@ def train_surf(config):
         if epoch % 10 == 0:
             torch.save(cortexode.state_dict(), model_dir+'/model_'+surf_type+'_'+\
                        data_name+'_'+surf_hemi+'_'+tag+'_'+str(epoch)+'epochs.pt')
-            # 保存stage-2的权重
             # torch.save(cortexode_exchange.state_dict(), model_dir+'/model_ex_'+surf_type+'_'+\
             #            data_name+'_'+surf_hemi+'_'+tag+'_'+str(epoch)+'epochs.pt')
 
     # save the final model
     torch.save(cortexode.state_dict(), model_dir+'/model_'+surf_type+'_'+\
                data_name+'_'+surf_hemi+'_'+tag+'.pt')
-    # 保存stage-2的权重
     # torch.save(cortexode_exchange.state_dict(), model_dir+'/model_ex_'+surf_type+'_'+\
     #            data_name+'_'+surf_hemi+'_'+tag+'.pt')
 
